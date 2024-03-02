@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DeleteAllNotes\" />
+    <Compile Remove="DeleteAllNotes\**" />
+    <EmbeddedResource Remove="DeleteAllNotes\**" />
+    <None Remove="DeleteAllNotes\**" />
   </ItemGroup>
 
 </Project>
