@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NotesApplication.Core;
 using NotesApplication.Core.CreateNote;
 using NotesApplication.Core.GetAllNotes;
 using NotesApplication.Core.UpdateNote;
+using NotesApplication.Data;
 
 namespace NotesApplication.API.Controllers;
 
@@ -9,14 +11,23 @@ namespace NotesApplication.API.Controllers;
 [ApiController]
 public class NotificationController : ControllerBase
 {
-    private static List<Notification> _notifications = [
-        new Notification()
+    private static List<Note> _notifications = [
+        new Note()
         {
             Id = new Guid("aaeaf34b-1cef-4f7c-b87d-fda12484edd8"),
             Name = "Name1",
             Description = "Description1"
         }
         ];
+
+    private readonly NotesDbContext _context;
+
+    public NotificationController(NotesDbContext context)
+    {
+        _context = context;
+    }
+
+    public virtual List<Note> Notes { get; set; }
 
     [HttpPut("update")]
     public async Task<ActionResult<bool>> Update(UpdateRequest request)
@@ -47,14 +58,14 @@ public class NotificationController : ControllerBase
     [HttpPost("create")]
     public async Task<NotificationResponse> CreateNotification(CreateRequest request)
     {
-        var newNote = new Notification
+        var newNote = new Note(request.Name, request.Description)
         {
-            Id = Guid.NewGuid(),
             Name = request.Name,
             Description = request.Description
         };
 
-        _notifications.Add(newNote);
+        _context.Add(newNote);
+        _context.SaveChanges();
 
         return new NotificationResponse(newNote.Name, newNote.Description, newNote.Id);
     }
