@@ -52,17 +52,13 @@ public class NotificationController : ControllerBase
     [HttpGet("getNotes")]
     public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
     {
-        return _notifications.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
+        return _context.Notes.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
     }
 
     [HttpPost("create")]
     public async Task<NotificationResponse> CreateNotification(CreateRequest request)
     {
-        var newNote = new Note(request.Name, request.Description)
-        {
-            Name = request.Name,
-            Description = request.Description
-        };
+        var newNote = new Note(request.Name, request.Description);
 
         _context.Add(newNote);
         _context.SaveChanges();
