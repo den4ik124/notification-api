@@ -32,7 +32,7 @@ public class NotificationController : ControllerBase
     [HttpPut("update")]
     public async Task<ActionResult<bool>> Update(UpdateRequest request)
     {
-        var note = _notifications.FirstOrDefault(x => x.Id == request.Id);
+        var note = _context.Notes.FirstOrDefault(x => x.Id == request.Id);
 
         if (note == null)
         {
@@ -45,7 +45,7 @@ public class NotificationController : ControllerBase
         {
             note.Description = request.NewDescription;
         }
-
+        _context.SaveChanges();
         return true;
     }
 
@@ -69,15 +69,15 @@ public class NotificationController : ControllerBase
     [HttpDelete("delete/{id}")]
     public async Task<ActionResult<bool>> Delete(Guid id)
     {
-        var noteToRemove = _notifications.FirstOrDefault(x => x.Id == id);
+        var noteToRemove = _context.Notes.FirstOrDefault(x => x.Id == id);
 
         if (noteToRemove == null)
         {
             return NotFound();
         }
 
-        _notifications.Remove(noteToRemove);
+        _context.Notes.Remove(noteToRemove);
 
-        return true;
+        return _context.SaveChanges() > 0;
     }
 }
