@@ -30,13 +30,13 @@ public class NotificationController : ControllerBase
     public virtual List<Note> Notes { get; set; }
 
     [HttpPut("update")]
-    public async Task<ActionResult<bool>> Update(UpdateRequest request)
+    public async Task<ActionResult<bool>> Update(Guid id, UpdateRequest request)
     {
-        var note = _context.Notes.FirstOrDefault(x => x.Id == request.Id);
+        var note = _context.Notes.FirstOrDefault(x => x.Id == id);
 
         if (note == null)
         {
-            return NotFound();
+            return NotFound("Не найден");
         }
 
         note.Name = request.NewName;
@@ -45,7 +45,7 @@ public class NotificationController : ControllerBase
         {
             note.Description = request.NewDescription;
         }
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return true;
     }
 
@@ -56,14 +56,29 @@ public class NotificationController : ControllerBase
     }
 
     [HttpPost("create")]
-    public async Task<NotificationResponse> CreateNotification(CreateRequest request)
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateNotification(CreateRequest request)
     {
+        if (request == null)
+        {
+            return BadRequest("Херовый запрос");
+        }
+        else if (string.IsNullOrEmpty(request.Name))
+        {
+            return BadRequest("Херовое имя пользователя");
+        }
+        else if (string.IsNullOrEmpty(request.Description))
+        {
+            return BadRequest("Херовое описание");
+        }
+
         var newNote = new Note(request.Name, request.Description);
 
         _context.Add(newNote);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
-        return new NotificationResponse(newNote.Name, newNote.Description, newNote.Id);
+        return Ok();
     }
 
     [HttpDelete("delete/{id}")]
@@ -78,6 +93,6 @@ public class NotificationController : ControllerBase
 
         _context.Notes.Remove(noteToRemove);
 
-        return _context.SaveChanges() > 0;
+        return await _context.SaveChangesAsync() > 0;
     }
 }

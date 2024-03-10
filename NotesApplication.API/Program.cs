@@ -26,7 +26,7 @@ public class Program
 
         var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
 
-        dbContext.Database.EnsureDeleted();   //  удаление БД
+        // dbContext.Database.EnsureDeleted();   //  удаление БД
         dbContext.Database.EnsureCreated();
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
