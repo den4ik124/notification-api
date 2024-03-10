@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NotesApplication.Core;
 using NotesApplication.Core.CreateNote;
 using NotesApplication.Core.GetAllNotes;
 using NotesApplication.Core.UpdateNote;
+using NotesApplication.Data;
 
 namespace NotesApplication.API.Controllers;
 
@@ -9,8 +11,8 @@ namespace NotesApplication.API.Controllers;
 [ApiController]
 public class NotificationController : ControllerBase
 {
-    private static List<Notification> _notifications = [
-        new Notification()
+    private static List<Note> _notifications = [
+        new Note()
         {
             Id = new Guid("aaeaf34b-1cef-4f7c-b87d-fda12484edd8"),
             Name = "Name1",
@@ -18,10 +20,19 @@ public class NotificationController : ControllerBase
         }
         ];
 
+    private readonly NotesDbContext _context;
+
+    public NotificationController(NotesDbContext context)
+    {
+        _context = context;
+    }
+
+    public virtual List<Note> Notes { get; set; }
+
     [HttpPut("update")]
     public async Task<ActionResult<bool>> Update(UpdateRequest request)
     {
-        var note = _notifications.FirstOrDefault(x => x.Id == request.Id);
+        var note = _context.Notes.FirstOrDefault(x => x.Id == request.Id);
 
         if (note == null)
         {
@@ -34,27 +45,23 @@ public class NotificationController : ControllerBase
         {
             note.Description = request.NewDescription;
         }
-
+        _context.SaveChanges();
         return true;
     }
 
     [HttpGet("getNotes")]
     public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
     {
-        return _notifications.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
+        return _context.Notes.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
     }
 
     [HttpPost("create")]
     public async Task<NotificationResponse> CreateNotification(CreateRequest request)
     {
-        var newNote = new Notification
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name,
-            Description = request.Description
-        };
+        var newNote = new Note(request.Name, request.Description);
 
-        _notifications.Add(newNote);
+        _context.Add(newNote);
+        _context.SaveChanges();
 
         return new NotificationResponse(newNote.Name, newNote.Description, newNote.Id);
     }
@@ -62,15 +69,15 @@ public class NotificationController : ControllerBase
     [HttpDelete("delete/{id}")]
     public async Task<ActionResult<bool>> Delete(Guid id)
     {
-        var noteToRemove = _notifications.FirstOrDefault(x => x.Id == id);
+        var noteToRemove = _context.Notes.FirstOrDefault(x => x.Id == id);
 
         if (noteToRemove == null)
         {
             return NotFound();
         }
 
-        _notifications.Remove(noteToRemove);
+        _context.Notes.Remove(noteToRemove);
 
-        return true;
+        return _context.SaveChanges() > 0;
     }
 }
