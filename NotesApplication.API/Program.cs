@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using NotesApplication.Data;
 
 namespace NotesApplication.API;
 
-public class Program
+public partial class Program
 {
     public static void Main(string[] args)
     {
@@ -51,3 +50,6 @@ public class Program
             options.UseSqlServer(configuration.GetConnectionString("NotesDatabase")));
     }
 }
+
+public partial class Program
+{ }
