@@ -8,7 +8,7 @@ using NotesApplication.Data;
 
 namespace NotesApplication.Test.Integration;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IClassFixture<CustomWebApplicationFactory>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -34,9 +34,18 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             {
                 var connectionString = configuration.GetConnectionString("NotesTestDatabase");
                 container.UseSqlServer(connectionString);
+                //container.UseInMemoryDatabase("NotesTestDatabase");
             });
         });
 
         builder.UseEnvironment("Testing");
     }
+
+    public override ValueTask DisposeAsync()
+    {
+        var context = Services.GetRequiredService<NotesDbContext>();
+        context.Database.EnsureDeleted();
+        return base.DisposeAsync();
+    }
+
 }

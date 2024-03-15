@@ -1,14 +1,9 @@
-﻿using NotesApplication.API.Controllers;
+﻿namespace NotesApplication.Test.Integration;
 
-namespace NotesApplication.Test.Integration;
-
-public class NotificationControllerTests : IntegrationTestBase, IClassFixture<CustomWebApplicationFactory>
+public class NotificationControllerTests : IntegrationTestBase
 {
-    private readonly CustomWebApplicationFactory _factory;
-
     public NotificationControllerTests(CustomWebApplicationFactory factory) : base(factory)
     {
-        _factory = factory;
     }
 
     //TODO создать контекст
