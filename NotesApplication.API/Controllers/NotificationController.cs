@@ -29,11 +29,13 @@ public class NotificationController : ControllerBase
 
     public virtual List<Note> Notes { get; set; }
 
-    [HttpPut("update")]
+    [HttpPut("update/{id}")]
     public async Task<ActionResult<bool>> Update(Guid id, UpdateRequest request)
     {
         var note = _context.Notes.FirstOrDefault(x => x.Id == id);
-
+        //TODO пустой гуид из 00000
+        //TODO не менять на одинаковое
+        //TODO проверка даных в реквесте
         if (note == null)
         {
             return NotFound("Не найден");
@@ -45,26 +47,22 @@ public class NotificationController : ControllerBase
         {
             note.Description = request.NewDescription;
         }
-        await _context.SaveChangesAsync();
-        return true;
+
+        return await _context.SaveChangesAsync() > 0;
     }
 
-    [HttpGet("getNotes")]
+    [HttpGet()]
     public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
     {
         return _context.Notes.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
     }
 
     [HttpPost("create")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateNotification(CreateRequest request)
     {
-        if (request == null)
-        {
-            return BadRequest("Херовый запрос");
-        }
-        else if (string.IsNullOrEmpty(request.Name))
+        if (string.IsNullOrEmpty(request.Name))
         {
             return BadRequest("Херовое имя пользователя");
         }
@@ -81,11 +79,11 @@ public class NotificationController : ControllerBase
         return Ok();
     }
 
-    [HttpDelete("delete/{id}")]
+    [HttpDelete("{id}")]
     public async Task<ActionResult<bool>> Delete(Guid id)
     {
         var noteToRemove = _context.Notes.FirstOrDefault(x => x.Id == id);
-
+        //TODO пустой гуид из 00000000-0000-0000-0000-000000000000 - guid.empty
         if (noteToRemove == null)
         {
             return NotFound();

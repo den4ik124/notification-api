@@ -1,6 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Azure.Core;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using NotesApplication.Core.CreateNote;
+using NotesApplication.Core.GetAllNotes;
 using NotesApplication.Data;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 
 namespace NotesApplication.Test.Integration;
 
@@ -8,7 +15,7 @@ public class IntegrationTestBase : IClassFixture<CustomWebApplicationFactory>, I
 {
     private readonly CustomWebApplicationFactory _webAppFactory;
 
-    public HttpClient Client { get; private set; }
+    public HttpClient Client { get; }
 
     private bool _disposedValue;
 
@@ -16,10 +23,33 @@ public class IntegrationTestBase : IClassFixture<CustomWebApplicationFactory>, I
     {
         _webAppFactory = webAppFactory;
         Client = webAppFactory.CreateClient();
+        Client.BaseAddress = new Uri("http://localhost:5000/");
     }
 
     public NotesDbContext GetNotesDbContext()
         => _webAppFactory.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
+
+    public async Task<TResult?> ConvertTo<TResult>(HttpResponseMessage httpMessage)
+    {
+        var test = await httpMessage.Content.ReadAsStringAsync();
+        var res = JsonSerializer.Deserialize<TResult>(test); //TODO бажина с Json
+        return res;
+    }
+
+    public async Task<HttpResponseMessage>? SendGetRequest(string url)
+    {
+        return await Client.GetAsync(url);
+    }
+
+    public async Task<HttpResponseMessage>? SendPostRequest<TBody>(string url, TBody request)
+    {
+        using StringContent jsonContent = new(
+        JsonSerializer.Serialize(request),
+        Encoding.UTF8,
+        "application/json");
+
+        return await Client.PostAsync(url, jsonContent);
+    }
 
     protected virtual void Dispose(bool disposing)
     {

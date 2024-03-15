@@ -5,6 +5,7 @@ public class Note : IEquatable<Note>
     public Note(string name, string description)
     {
         Id = Guid.NewGuid();
+
         Name = name;
         Description = description;
     }
@@ -14,6 +15,7 @@ public class Note : IEquatable<Note>
     }
 
     public Guid Id { get; set; }
+
     public string Name { get; set; }
     public string Description { get; set; }
 
