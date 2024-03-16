@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using NotesApplication.API.Controllers;
 using NotesApplication.Core;
 using NotesApplication.Core.CreateNote;
@@ -148,4 +149,123 @@ public class NotificationControllerTests : IntegrationTestBase
             //new object[] { new CreateRequest() {  Name = null,Description = "description"}, "Херовое имя пользователя" },
             new object[] { new CreateRequest() {  Name = string.Empty,Description = "description"}, "Херовое имя пользователя" },
         };
+
+    [Fact]
+    public async Task UpdateNote_WhenSuccessResponse_ShouldReturnOk()
+    {
+        //Arange
+
+        var dbContext = GetNotesDbContext();
+
+        List<Note> notifications = [
+       new Note()
+        {
+            Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96629"),
+            Name = "Name1",
+            Description = "Description1"
+        }
+       ];
+        await dbContext.AddRangeAsync(notifications);
+        await dbContext.SaveChangesAsync();
+
+        Guid id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96629");
+        var newName = "NewName1";
+        var newDescription = "NewDescription1";
+
+        var request = new UpdateRequest()
+        {
+            NewName = newName,
+            NewDescription = newDescription
+        };
+
+        //Act
+
+        var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{id}", request);
+
+        //Assert
+
+        var note = dbContext.Notes.AsNoTracking().FirstOrDefault();
+
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.OK);
+        note.Should().NotBeNull();
+
+        note.Name.Should().Be(newName);
+        note.Description.Should().Be(newDescription);
+
+        //note.Name.Should().Be(newName);
+        //note.Description.Should().Be(description);
+        //dbContext.Notes.Count().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DeleteNote_WhenSuccessResponse_ShouldReturnOk()
+    {
+        //Arange
+        var dbContext = GetNotesDbContext();
+
+        List<Note> notifications = [
+       new Note()
+        {
+            Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626"),
+            Name = "Name1",
+            Description = "Description1"
+        }
+       ];
+        await dbContext.AddRangeAsync(notifications);
+        await dbContext.SaveChangesAsync();
+
+        Guid id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626");
+
+        //Act
+
+        var responseMessage = await SendDeleteRequest(ControllerBaseUrl + $"/{id}");
+
+        //Assert
+        responseMessage.Should().NotHaveStatusCode(HttpStatusCode.BadRequest);
+
+        dbContext.Notes.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteNote_WhenSuccessResponse_ShouldReturnBadRequest()
+    {
+        //Arange
+
+        Guid id = Guid.Empty;
+
+        //Act
+
+        var responseMessage = await SendDeleteRequest(ControllerBaseUrl + $"/{id}");
+
+        //Assert
+        responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteNote_WhenSuccessResponse_ShouldReturnNotFound()
+    {
+        //Arange
+        var dbContext = GetNotesDbContext();
+
+        List<Note> notifications = [
+       new Note()
+        {
+            Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626"),
+            Name = "Name1",
+            Description = "Description1"
+        }
+       ];
+        await dbContext.AddRangeAsync(notifications);
+        await dbContext.SaveChangesAsync();
+
+        Guid id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96666");
+
+        //Act
+
+        var responseMessage = await SendDeleteRequest(ControllerBaseUrl + $"/{id}");
+
+        //Assert
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.NotFound);
+    }
 }

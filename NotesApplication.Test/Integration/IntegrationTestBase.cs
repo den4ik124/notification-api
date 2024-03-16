@@ -41,6 +41,21 @@ public class IntegrationTestBase : IClassFixture<CustomWebApplicationFactory>, I
         return await Client.GetAsync(url);
     }
 
+    public async Task<HttpResponseMessage>? SendPutRequest<TBody>(string url, TBody request)
+    {
+        using StringContent jsonContent = new(
+        JsonSerializer.Serialize(request),
+        Encoding.UTF8,
+        "application/json");
+
+        return await Client.PutAsync(url, jsonContent);
+    }
+
+    public async Task<HttpResponseMessage>? SendDeleteRequest(string url)
+    {
+        return await Client.DeleteAsync(url);
+    }
+
     public async Task<HttpResponseMessage>? SendPostRequest<TBody>(string url, TBody request)
     {
         using StringContent jsonContent = new(
