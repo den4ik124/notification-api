@@ -22,7 +22,6 @@ public class NotificationControllerTests : IntegrationTestBase
     public async Task GetAllNotes_WhenSuccess_ShouldReturnCollectionOfNotes()
     {
         //Arange
-        //TODO добавить данные X в базу
 
         var dbContext = GetNotesDbContext();
 
@@ -36,13 +35,12 @@ public class NotificationControllerTests : IntegrationTestBase
         await dbContext.AddRangeAsync(notifications);
         await dbContext.SaveChangesAsync();
         //Act
-        // TODO получить записи из контроллера
 
         var controller = new NotificationController(dbContext);
         var res = await controller.GetAllNotes();
 
         //Assert
-        //TODO сравнить результат с данными Х
+
         res.Should().NotBeEmpty();
         res.Should().BeEquivalentTo(notifications.Select(x => new NotificationResponse(x.Name, x.Description, x.Id)));
     }
@@ -51,18 +49,16 @@ public class NotificationControllerTests : IntegrationTestBase
     public async Task GetAllNotes_WhenSuccess_ShouldReturnEmptyCollectionOfNotes()
     {
         //Arange
-        //TODO добавить данные X в базу
 
         var dbContext = GetNotesDbContext();
 
         //Act
-        // TODO получить записи из контроллера
 
         var controller = new NotificationController(dbContext);
         var res = await controller.GetAllNotes();
 
         //Assert
-        //TODO сравнить результат с данными Х
+
         res.Should().BeEmpty();
     }
 
@@ -70,7 +66,6 @@ public class NotificationControllerTests : IntegrationTestBase
     public async Task GetAllNotes_WhenSuccessResponse_ShouldReturnCollectionOfNotes()
     {
         //Arange
-        //TODO добавить данные X в базу
 
         var dbContext = GetNotesDbContext();
 
@@ -84,7 +79,6 @@ public class NotificationControllerTests : IntegrationTestBase
         await dbContext.AddRangeAsync(notifications);
         await dbContext.SaveChangesAsync();
         //Act
-        // TODO получить записи из контроллера
 
         ///api/Notification/getNotes
         //IEnumerable<NotificationResponse>?
@@ -92,7 +86,6 @@ public class NotificationControllerTests : IntegrationTestBase
 
         var response = await ConvertTo<IEnumerable<NotificationResponse>>(responseMessage);
         //Assert
-        //TODO сравнить результат с данными Х
 
         responseMessage.StatusCode.Should().Be(HttpStatusCode.OK);
 

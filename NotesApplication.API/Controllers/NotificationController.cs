@@ -32,13 +32,34 @@ public class NotificationController : ControllerBase
     [HttpPut("update/{id}")]
     public async Task<ActionResult<bool>> Update(Guid id, UpdateRequest request)
     {
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Пустой Guid");
+        }
+
+        if (string.IsNullOrEmpty(request.NewName))
+        {
+            return BadRequest("Херовое имя пользователя");
+        }
+        else if (string.IsNullOrEmpty(request.NewDescription))
+        {
+            return BadRequest("Херовое описание");
+        }
+
         var note = _context.Notes.FirstOrDefault(x => x.Id == id);
-        //TODO пустой гуид из 00000
-        //TODO не менять на одинаковое
-        //TODO проверка даных в реквесте
+
         if (note == null)
         {
-            return NotFound("Не найден");
+            return NotFound("Запись с таким Id не найдена");
+        }
+
+        if (request.NewName == note.Name)
+        {
+            return BadRequest("Введено одинаковое Имя. Нечего изменять");
+        }
+        if (request.NewDescription == note.Description)
+        {
+            return BadRequest("Введено одинаковое Описание. Нечего изменять");
         }
 
         note.Name = request.NewName;
@@ -82,8 +103,13 @@ public class NotificationController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<bool>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Пустой Guid");
+        }
+
         var noteToRemove = _context.Notes.FirstOrDefault(x => x.Id == id);
-        //TODO пустой гуид из 00000000-0000-0000-0000-000000000000 - guid.empty
+
         if (noteToRemove == null)
         {
             return NotFound();
