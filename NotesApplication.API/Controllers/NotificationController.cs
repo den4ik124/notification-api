@@ -69,6 +69,7 @@ public class NotificationController : ControllerBase
             note.Description = request.NewDescription;
         }
 
+        _context.Update(note);
         return await _context.SaveChangesAsync() > 0;
     }
 

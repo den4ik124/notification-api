@@ -1,10 +1,6 @@
-﻿using Azure.Core;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NotesApplication.Core.CreateNote;
-using NotesApplication.Core.GetAllNotes;
 using NotesApplication.Data;
-using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -30,16 +26,10 @@ public class IntegrationTestBase : IClassFixture<CustomWebApplicationFactory>, I
         => _webAppFactory.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
 
     public async Task<TResult?> ConvertTo<TResult>(HttpResponseMessage httpMessage)
-    {
-        var test = await httpMessage.Content.ReadAsStringAsync();
-        var res = JsonSerializer.Deserialize<TResult>(test); //TODO бажина с Json
-        return res;
-    }
+        => await httpMessage.Content.ReadFromJsonAsync<TResult>();
 
     public async Task<HttpResponseMessage>? SendGetRequest(string url)
-    {
-        return await Client.GetAsync(url);
-    }
+        => await Client.GetAsync(url);
 
     public async Task<HttpResponseMessage>? SendPutRequest<TBody>(string url, TBody request)
     {

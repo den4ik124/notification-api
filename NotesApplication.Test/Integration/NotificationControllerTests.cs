@@ -5,9 +5,7 @@ using NotesApplication.Core;
 using NotesApplication.Core.CreateNote;
 using NotesApplication.Core.GetAllNotes;
 using NotesApplication.Core.UpdateNote;
-using System;
 using System.Net;
-using System.Net.Http.Json;
 
 namespace NotesApplication.Test.Integration;
 
@@ -28,10 +26,10 @@ public class NotificationControllerTests : IntegrationTestBase
 
         List<Note> notifications = [
        new Note()
-        {
-            Name = "Name1",
-            Description = "Description1"
-        }
+       {
+           Name = "Name1",
+           Description = "Description1"
+       }
        ];
         await dbContext.AddRangeAsync(notifications);
         await dbContext.SaveChangesAsync();
@@ -72,10 +70,10 @@ public class NotificationControllerTests : IntegrationTestBase
 
         List<Note> notifications = [
        new Note()
-        {
-            Name = "Name1",
-            Description = "Description1"
-        }
+       {
+           Name = "Name1",
+           Description = "Description1"
+       }
        ];
         await dbContext.AddRangeAsync(notifications);
         await dbContext.SaveChangesAsync();
@@ -157,40 +155,30 @@ public class NotificationControllerTests : IntegrationTestBase
 
         var dbContext = GetNotesDbContext();
 
-        List<Note> notifications = [
-       new Note()
-        {
-            Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96629"),
-            Name = "Name1",
-            Description = "Description1"
-        }
-       ];
-        await dbContext.AddRangeAsync(notifications);
-        await dbContext.SaveChangesAsync();
+        var note = new Note("Name1", "Description1");
 
-        Guid id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96629");
-        var newName = "NewName1";
-        var newDescription = "NewDescription1";
+        await dbContext.AddAsync(note);
+        await dbContext.SaveChangesAsync();
 
         var request = new UpdateRequest()
         {
-            NewName = newName,
-            NewDescription = newDescription
+            NewName = "NewName1",
+            NewDescription = "NewDescription1"
         };
 
         //Act
 
-        var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{id}", request);
+        var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", request);
 
         //Assert
 
-        var note = dbContext.Notes.AsNoTracking().FirstOrDefault();
+        var noteFromDb = dbContext.Notes.AsNoTracking().FirstOrDefault();
 
         responseMessage.Should().HaveStatusCode(HttpStatusCode.OK);
-        note.Should().NotBeNull();
+        noteFromDb.Should().NotBeNull();
 
-        note.Name.Should().Be(newName);
-        note.Description.Should().Be(newDescription);
+        noteFromDb.Name.Should().Be(request.NewName);
+        noteFromDb.Description.Should().Be(request.NewDescription);
 
         //note.Name.Should().Be(newName);
         //note.Description.Should().Be(description);
@@ -205,11 +193,11 @@ public class NotificationControllerTests : IntegrationTestBase
 
         List<Note> notifications = [
        new Note()
-        {
-            Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626"),
-            Name = "Name1",
-            Description = "Description1"
-        }
+       {
+           Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626"),
+           Name = "Name1",
+           Description = "Description1"
+       }
        ];
         await dbContext.AddRangeAsync(notifications);
         await dbContext.SaveChangesAsync();
@@ -250,11 +238,11 @@ public class NotificationControllerTests : IntegrationTestBase
 
         List<Note> notifications = [
        new Note()
-        {
-            Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626"),
-            Name = "Name1",
-            Description = "Description1"
-        }
+       {
+           Id = Guid.Parse("35ac679f-8d97-4ada-857c-02b89bb96626"),
+           Name = "Name1",
+           Description = "Description1"
+       }
        ];
         await dbContext.AddRangeAsync(notifications);
         await dbContext.SaveChangesAsync();
