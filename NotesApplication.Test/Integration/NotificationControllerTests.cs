@@ -261,7 +261,7 @@ public class NotificationControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateNote_WhenValidationIdFailed_ShouldReturn400()
+    public async Task UpdateNote_WhenValidationIdFound_ShouldReturn400()
     {
         //Arange
 
@@ -284,7 +284,6 @@ public class NotificationControllerTests : IntegrationTestBase
         //Act
 
         var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{notFoundGuid}", request);
-        var responseMessageEmptyGuid = await SendPutRequest(ControllerBaseUrl + $"/update/{emptyGuid}", request);
 
         //Assert
         var noteFromDb = dbContext.Notes.AsNoTracking().FirstOrDefault();
@@ -293,6 +292,36 @@ public class NotificationControllerTests : IntegrationTestBase
 
         responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateNote_WhenValidationIdEmpty_ShouldReturn400()
+    {
+        //Arange
+
+        var dbContext = GetNotesDbContext();
+
+        var note = new Note("Name1", "Description1");
+
+        await dbContext.AddAsync(note);
+        await dbContext.SaveChangesAsync();
+
+        var emptyGuid = Guid.Empty;
+
+        var request = new UpdateRequest()
+        {
+            NewName = "Name123",
+            NewDescription = "NewDescription123"
+        };
+
+        //Act
+
+        var responseMessageEmptyGuid = await SendPutRequest(ControllerBaseUrl + $"/update/{emptyGuid}", request);
+
+        //Assert
+        var noteFromDb = dbContext.Notes.AsNoTracking().FirstOrDefault();
+
+        noteFromDb.Should().NotBeNull();
 
         responseMessageEmptyGuid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         responseMessageEmptyGuid.Should().HaveStatusCode(HttpStatusCode.BadRequest);
