@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using Azure.Core;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NotesApplication.API.Controllers;
 using NotesApplication.Core;
@@ -179,10 +180,122 @@ public class NotificationControllerTests : IntegrationTestBase
 
         noteFromDb.Name.Should().Be(request.NewName);
         noteFromDb.Description.Should().Be(request.NewDescription);
+    }
 
-        //note.Name.Should().Be(newName);
-        //note.Description.Should().Be(description);
-        //dbContext.Notes.Count().Should().Be(1);
+    [Theory]
+    [MemberData(nameof(UpdateData))]
+    public async Task UpdateNote_WhenValidationFailed_ShouldReturn400(UpdateRequest request, string expectedMessage)
+    {
+        //Arange
+
+        var dbContext = GetNotesDbContext();
+
+        var note = new Note("Name1", "Description1");
+
+        await dbContext.AddAsync(note);
+        await dbContext.SaveChangesAsync();
+
+        //var request = new UpdateRequest()
+        //{
+        //    NewName = "NewName1",
+        //    NewDescription = "NewDescription1"
+        //};
+
+        //Act
+
+        var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", request);
+
+        //Assert
+
+        responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+
+        (await responseMessage.Content.ReadAsStringAsync()).Should().Be(expectedMessage);
+    }
+
+    public static IEnumerable<object[]> UpdateData =>
+        new List<object[]>
+        {
+            new object[] { new UpdateRequest()  { NewName= "NewName", NewDescription = "" }, "Херовое описание" },
+            new object[] { new UpdateRequest() { NewName = string.Empty, NewDescription = "NewDescription" }, "Херовое имя пользователя" },
+        };
+
+    [Fact]
+    public async Task UpdateNote_WhenValidationFromDBFailed_ShouldReturn400()
+    {
+        //Arange
+
+        var dbContext = GetNotesDbContext();
+
+        var note = new Note("Name1", "Description1");
+
+        await dbContext.AddAsync(note);
+        await dbContext.SaveChangesAsync();
+
+        var requestSameName = new UpdateRequest()
+        {
+            NewName = "Name1",
+            NewDescription = "NewDescription1"
+        };
+        var requestSameDescription = new UpdateRequest()
+        {
+            NewName = "NewName",
+            NewDescription = "Description1"
+        };
+
+        //Act
+
+        var responseMessageName = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", requestSameName);
+        var responseMessageDescription = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", requestSameDescription);
+
+        //Assert
+        var noteFromDb = dbContext.Notes.AsNoTracking().FirstOrDefault();
+
+        noteFromDb.Should().NotBeNull();
+
+        responseMessageName.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessageName.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+
+        responseMessageDescription.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessageDescription.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateNote_WhenValidationIdFailed_ShouldReturn400()
+    {
+        //Arange
+
+        var dbContext = GetNotesDbContext();
+
+        var note = new Note("Name1", "Description1");
+
+        await dbContext.AddAsync(note);
+        await dbContext.SaveChangesAsync();
+
+        var notFoundGuid = new Guid();
+        var emptyGuid = Guid.Empty;
+
+        var request = new UpdateRequest()
+        {
+            NewName = "Name123",
+            NewDescription = "NewDescription123"
+        };
+
+        //Act
+
+        var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{notFoundGuid}", request);
+        var responseMessageEmptyGuid = await SendPutRequest(ControllerBaseUrl + $"/update/{emptyGuid}", request);
+
+        //Assert
+        var noteFromDb = dbContext.Notes.AsNoTracking().FirstOrDefault();
+
+        noteFromDb.Should().NotBeNull();
+
+        responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+
+        responseMessageEmptyGuid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessageEmptyGuid.Should().HaveStatusCode(HttpStatusCode.BadRequest);
     }
 
     [Fact]
