@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using NotesApplication.Data;
 
 namespace NotesApplication.API;
 
-public class Program
+public partial class Program
 {
     public static void Main(string[] args)
     {
@@ -26,7 +25,7 @@ public class Program
 
         var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
 
-        dbContext.Database.EnsureDeleted();   //  удаление БД
+        // dbContext.Database.EnsureDeleted();   //  удаление БД
         dbContext.Database.EnsureCreated();
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -51,3 +50,6 @@ public class Program
             options.UseSqlServer(configuration.GetConnectionString("NotesDatabase")));
     }
 }
+
+public partial class Program
+{ }

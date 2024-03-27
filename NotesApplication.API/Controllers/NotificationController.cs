@@ -29,14 +29,37 @@ public class NotificationController : ControllerBase
 
     public virtual List<Note> Notes { get; set; }
 
-    [HttpPut("update")]
-    public async Task<ActionResult<bool>> Update(UpdateRequest request)
+    [HttpPut("update/{id}")]
+    public async Task<ActionResult<bool>> Update(Guid id, UpdateRequest request)
     {
-        var note = _context.Notes.FirstOrDefault(x => x.Id == request.Id);
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Пустой Guid");
+        }
+
+        if (string.IsNullOrEmpty(request.NewName))
+        {
+            return BadRequest("Херовое имя пользователя");
+        }
+        else if (string.IsNullOrEmpty(request.NewDescription))
+        {
+            return BadRequest("Херовое описание");
+        }
+
+        var note = _context.Notes.FirstOrDefault(x => x.Id == id);
 
         if (note == null)
         {
-            return NotFound();
+            return NotFound("Запись с таким Id не найдена");
+        }
+
+        if (request.NewName == note.Name)
+        {
+            return BadRequest("Введено одинаковое Имя. Нечего изменять");
+        }
+        if (request.NewDescription == note.Description)
+        {
+            return BadRequest("Введено одинаковое Описание. Нечего изменять");
         }
 
         note.Name = request.NewName;
@@ -45,30 +68,47 @@ public class NotificationController : ControllerBase
         {
             note.Description = request.NewDescription;
         }
-        _context.SaveChanges();
-        return true;
+
+        _context.Update(note);
+        return await _context.SaveChangesAsync() > 0;
     }
 
-    [HttpGet("getNotes")]
+    [HttpGet()]
     public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
     {
         return _context.Notes.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
     }
 
     [HttpPost("create")]
-    public async Task<NotificationResponse> CreateNotification(CreateRequest request)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateNotification(CreateRequest request)
     {
+        if (string.IsNullOrEmpty(request.Name))
+        {
+            return BadRequest("Херовое имя пользователя");
+        }
+        else if (string.IsNullOrEmpty(request.Description))
+        {
+            return BadRequest("Херовое описание");
+        }
+
         var newNote = new Note(request.Name, request.Description);
 
         _context.Add(newNote);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
-        return new NotificationResponse(newNote.Name, newNote.Description, newNote.Id);
+        return Ok();
     }
 
-    [HttpDelete("delete/{id}")]
+    [HttpDelete("{id}")]
     public async Task<ActionResult<bool>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Пустой Guid");
+        }
+
         var noteToRemove = _context.Notes.FirstOrDefault(x => x.Id == id);
 
         if (noteToRemove == null)
@@ -78,6 +118,6 @@ public class NotificationController : ControllerBase
 
         _context.Notes.Remove(noteToRemove);
 
-        return _context.SaveChanges() > 0;
+        return await _context.SaveChangesAsync() > 0;
     }
 }

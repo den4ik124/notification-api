@@ -2,7 +2,6 @@
 
 public class UpdateRequest
 {
-    public Guid Id { get; set; }
-    public string NewName { get; set; }
-    public string NewDescription { get; set; }
+    public string NewName { get; set; } = string.Empty;
+    public string NewDescription { get; set; } = string.Empty;
 }
