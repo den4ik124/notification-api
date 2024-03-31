@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NotesApplication.Business.GetAllNotes;
 using NotesApplication.Data;
 
 namespace NotesApplication.API;
@@ -15,6 +16,8 @@ public partial class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetAllNotesQuery).Assembly));
 
         ConfigureServices(builder.Services, builder.Configuration);
 

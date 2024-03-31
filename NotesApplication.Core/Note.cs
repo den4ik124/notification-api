@@ -21,6 +21,11 @@ public class Note : IEquatable<Note>
 
     public bool Equals(Note? other)
     {
-        return this == other;
+        return this.GetHashCode() == other.GetHashCode();
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name, Description);
     }
 }

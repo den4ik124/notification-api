@@ -1,4 +1,4 @@
-﻿namespace NotesApplication.Core.GetAllNotes;
+﻿namespace NotesApplication.Business;
 
 public class NotificationResponse
 {
