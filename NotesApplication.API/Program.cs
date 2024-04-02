@@ -1,5 +1,8 @@
+using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NotesApplication.Business.GetAllNotes;
+using NotesApplication.Business.Validation;
 using NotesApplication.Data;
 
 namespace NotesApplication.API;
@@ -9,7 +12,7 @@ public partial class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
+        var assembly = typeof(GetAllNotesQuery).Assembly;
         // Add services to the container.
 
         builder.Services.AddControllers();
@@ -17,7 +20,9 @@ public partial class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetAllNotesQuery).Assembly));
+        builder.Services.AddValidatorsFromAssembly(assembly);
+        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly))
+            .AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         ConfigureServices(builder.Services, builder.Configuration);
 
@@ -25,7 +30,7 @@ public partial class Program
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         var app = builder.Build();
-
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
         var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
 
         // dbContext.Database.EnsureDeleted();   //  удаление БД

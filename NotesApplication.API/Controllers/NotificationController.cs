@@ -25,19 +25,19 @@ public class NotificationController : ControllerBase
     [HttpPut("update/{id}")]
     public async Task<IActionResult> Update(Guid id, UpdateNoteRequest request)
     {
-        if (id == Guid.Empty)
-        {
-            return BadRequest("Пустой Guid");
-        }
+        //if (id == Guid.Empty)
+        //{
+        //    return BadRequest("Пустой Guid");
+        //}
 
-        if (string.IsNullOrEmpty(request.Name))
-        {
-            return BadRequest("Херовое имя пользователя");
-        }
-        else if (string.IsNullOrEmpty(request.Description))
-        {
-            return BadRequest("Херовое описание");
-        }
+        //if (string.IsNullOrEmpty(request.Name))
+        //{
+        //    return BadRequest("Херовое имя пользователя");
+        //}
+        //else if (string.IsNullOrEmpty(request.Description))
+        //{
+        //    return BadRequest("Херовое описание");
+        //}
 
         var result = await _mediator.Send(new UpdateNoteCommand
         {
@@ -46,6 +46,41 @@ public class NotificationController : ControllerBase
             NewName = request.Name
         });
         return HandleResult(result);
+    }
+
+    [HttpGet()]
+    public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
+    {
+        return await _mediator.Send(new GetAllNotesQuery());
+    }
+
+    [HttpPost("create")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateNotification(CreateNoteCommand request)
+    {
+        await _mediator.Send(request);
+        return Ok();// StatusCode(201);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        //if (id == Guid.Empty)
+        //{
+        //    return BadRequest("Пустой Guid");
+        //}
+
+        var result = await _mediator.Send(new DeleteNoteCommand(id));
+        return HandleResult(result);
+    }
+
+    [HttpGet("{id:Guid}", Name = "GetNoteById")]
+    public async Task<ActionResult<NotificationResponse>> GetNoteById(Guid id)
+    {
+        var product = await _mediator.Send(new GetNoteQuery(id));
+        return product != null ? Ok(product) : NotFound();
+        //TODO добавить тест
     }
 
     private IActionResult HandleResult(Result result)
@@ -68,49 +103,5 @@ public class NotificationController : ControllerBase
             default:
                 return BadRequest("плохо");
         };
-    }
-
-    [HttpGet()]
-    public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
-    {
-        return await _mediator.Send(new GetAllNotesQuery());
-    }
-
-    [HttpPost("create")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateNotification(CreateNoteCommand request)
-    {
-        if (string.IsNullOrEmpty(request.Name))
-        {
-            return BadRequest("Херовое имя пользователя");
-        }
-        else if (string.IsNullOrEmpty(request.Description))
-        {
-            return BadRequest("Херовое описание");
-        }
-
-        await _mediator.Send(request);
-        return Ok();// StatusCode(201);
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
-    {
-        if (id == Guid.Empty)
-        {
-            return BadRequest("Пустой Guid");
-        }
-
-        var result = await _mediator.Send(new DeleteNoteCommand(id));
-        return HandleResult(result);
-    }
-
-    [HttpGet("{id:Guid}", Name = "GetNoteById")]
-    public async Task<ActionResult<NotificationResponse>> GetNoteById(Guid id)
-    {
-        var product = await _mediator.Send(new GetNoteQuery(id));
-        return product != null ? Ok(product) : NotFound();
-        //TODO добавить тест
     }
 }
