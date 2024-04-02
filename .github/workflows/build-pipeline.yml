@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-
+    name: "build and test"
     runs-on: windows-latest
 
     steps:
