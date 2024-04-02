@@ -13,6 +13,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotesApplication.Test", "No
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotesApplication.Business", "NotesApplication.Business\NotesApplication.Business.csproj", "{E018140C-03B0-4932-85C0-43D9ADFA68DB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решения", "Элементы решения", "{4928D120-D0A9-4883-B377-5917F6F1B620}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build-pipeline.yml = .github\workflows\build-pipeline.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
