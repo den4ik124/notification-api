@@ -6,6 +6,6 @@ public sealed class DeleteNoteCommandValidator : AbstractValidator<DeleteNoteCom
 {
     public DeleteNoteCommandValidator()
     {
-        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Id).NotEmpty().WithMessage("Пустой Guid");
     }
 }

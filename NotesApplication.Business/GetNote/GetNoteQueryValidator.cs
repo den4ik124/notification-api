@@ -6,6 +6,6 @@ public sealed class GetNoteQueryValidator : AbstractValidator<GetNoteQuery>
 {
     public GetNoteQueryValidator()
     {
-        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Id).NotEmpty().WithMessage("Пустой Guid");
     }
 }

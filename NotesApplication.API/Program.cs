@@ -1,8 +1,9 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using NotesApplication.API.Middlewares;
+using NotesApplication.Business.Behavior;
 using NotesApplication.Business.GetAllNotes;
-using NotesApplication.Business.Validation;
 using NotesApplication.Data;
 
 namespace NotesApplication.API;
@@ -18,8 +19,10 @@ public partial class Program
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
+
         builder.Services.AddSwaggerGen();
 
+        builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
         builder.Services.AddValidatorsFromAssembly(assembly);
         builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly))
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));

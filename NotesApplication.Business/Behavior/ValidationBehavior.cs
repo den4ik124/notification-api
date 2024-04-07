@@ -2,7 +2,7 @@
 using FluentValidation.Results;
 using MediatR;
 
-namespace NotesApplication.Business.Validation;
+namespace NotesApplication.Business.Behavior;
 
 public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
 {

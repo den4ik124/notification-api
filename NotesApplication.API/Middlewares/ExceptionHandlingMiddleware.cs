@@ -1,9 +1,8 @@
 ﻿using FluentValidation;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
-namespace NotesApplication.Business.Validation;
+namespace NotesApplication.API.Middlewares;
 
 public sealed class ExceptionHandlingMiddleware
 {

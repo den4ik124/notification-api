@@ -5,11 +5,11 @@ using NotesApplication.Data;
 
 namespace NotesApplication.Business.GetAllNotes;
 
-public class GetNotesHandler : IRequestHandler<GetAllNotesQuery, IEnumerable<NotificationResponse>>
+public class GetAllNotesHandler : IRequestHandler<GetAllNotesQuery, IEnumerable<NotificationResponse>>
 {
     private readonly NotesDbContext _context;
 
-    public GetNotesHandler(NotesDbContext context)
+    public GetAllNotesHandler(NotesDbContext context)
     {
         _context = context;
     }
