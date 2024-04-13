@@ -22,10 +22,11 @@ public partial class Program
 
         builder.Services.AddSwaggerGen();
 
-        builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
         builder.Services.AddValidatorsFromAssembly(assembly);
         builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly))
-            .AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            .AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
+            .AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
+            .AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
         ConfigureServices(builder.Services, builder.Configuration);
 

@@ -1,5 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace NotesApplication.Business.Behavior;
 
@@ -14,12 +16,31 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"Handling {typeof(TRequest).Name}");
+        TResponse response = default;
 
-        var response = await next();
+        var requestName = request.GetType().Name;
+        _logger.LogInformation("Handling {Name}", typeof(TRequest).Name);
 
-        _logger.LogInformation($"Handled {typeof(TResponse).Name}");
+        var stopwatch = Stopwatch.StartNew();
 
+        try
+        {
+            try
+            {
+                _logger.LogInformation(message: "[Properties] {requestName} {request}.", requestName, JsonSerializer.Serialize(request));
+            }
+            catch (NotSupportedException)
+            {
+                _logger.LogInformation(message: "[Serialization ERROR] {requestName} Could not serialize the request.", requestName);
+            }
+            response = await next();
+        }
+        finally
+        {
+            stopwatch.Stop();
+            _logger.LogInformation(
+            message: " Handled {requestName}; Execution time = {ElapsedMilliseconds}ms.", requestName, stopwatch.ElapsedMilliseconds);
+        }
         return response;
     }
 }
