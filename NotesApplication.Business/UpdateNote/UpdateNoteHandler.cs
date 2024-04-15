@@ -10,9 +10,9 @@ namespace NotesApplication.Business.UpdateNote;
 internal class UpdateNoteHandler : IRequestHandler<UpdateNoteCommand, Result>
 {
     private readonly NotesDbContext _context;
-    private readonly ILogger<Task<Result>> _logger;
+    private readonly ILogger<UpdateNoteHandler> _logger;
 
-    public UpdateNoteHandler(ILogger<Task<Result>> logger, NotesDbContext context)
+    public UpdateNoteHandler(ILogger<UpdateNoteHandler> logger, NotesDbContext context)
     {
         _logger = logger;
         _context = context;

@@ -10,9 +10,9 @@ namespace NotesApplication.Business.DeleteNote;
 public class DeleteNoteHandler : IRequestHandler<DeleteNoteCommand, Result>
 {
     private readonly NotesDbContext _context;
-    private readonly ILogger<Task<Result>> _logger;
+    private readonly ILogger<DeleteNoteHandler> _logger;
 
-    public DeleteNoteHandler(ILogger<Task<Result>> logger, NotesDbContext context)
+    public DeleteNoteHandler(ILogger<DeleteNoteHandler> logger, NotesDbContext context)
     {
         _logger = logger;
         _context = context;
