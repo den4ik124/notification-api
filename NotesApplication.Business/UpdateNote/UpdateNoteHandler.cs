@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NotesApplication.Core;
 using NotesApplication.Data;
 using System.Net;
@@ -9,9 +10,11 @@ namespace NotesApplication.Business.UpdateNote;
 internal class UpdateNoteHandler : IRequestHandler<UpdateNoteCommand, Result>
 {
     private readonly NotesDbContext _context;
+    private readonly ILogger<Task<Result>> _logger;
 
-    public UpdateNoteHandler(NotesDbContext context)
+    public UpdateNoteHandler(ILogger<Task<Result>> logger, NotesDbContext context)
     {
+        _logger = logger;
         _context = context;
     }
 
@@ -21,16 +24,22 @@ internal class UpdateNoteHandler : IRequestHandler<UpdateNoteCommand, Result>
 
         if (note == null)
         {
-            return Result.Fail("Запись с таким Id не найдена", HttpStatusCode.NotFound);
+            var message = "Запись с таким Id не найдена";
+            _logger.LogWarning(message);
+            return Result.Fail(message, HttpStatusCode.NotFound);
         }
 
         if (request.NewName == note.Name)
         {
-            return Result.Fail("Введено одинаковое Имя. Нечего изменять", HttpStatusCode.BadRequest);
+            var message = "Введено одинаковое Имя. Нечего изменять";
+            _logger.LogWarning(message);
+            return Result.Fail(message, HttpStatusCode.BadRequest);
         }
         if (request.NewDescription == note.Description)
         {
-            return Result.Fail("Введено одинаковое Описание. Нечего изменять", HttpStatusCode.BadRequest);
+            var message = "Введено одинаковое Описание. Нечего изменять";
+            _logger.LogWarning(message);
+            return Result.Fail(message, HttpStatusCode.BadRequest);
         }
 
         note.Name = request.NewName;

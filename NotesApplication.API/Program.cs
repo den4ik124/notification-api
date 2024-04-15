@@ -10,7 +10,7 @@ namespace NotesApplication.API;
 
 public partial class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         var assembly = typeof(GetAllNotesQuery).Assembly;
@@ -37,8 +37,8 @@ public partial class Program
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
 
-        // dbContext.Database.EnsureDeleted();   //  удаление БД
-        dbContext.Database.EnsureCreated();
+        // dbContext.Database.EnsureDeleted();   //  удаление БД MigrateAsync  EnsureCreated
+        await dbContext.Database.MigrateAsync();
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
@@ -62,6 +62,3 @@ public partial class Program
             options.UseSqlServer(configuration.GetConnectionString("NotesDatabase")));
     }
 }
-
-public partial class Program
-{ }

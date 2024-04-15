@@ -8,6 +8,7 @@ public class Note : IEquatable<Note>
 
         Name = name;
         Description = description;
+        Time = DateTime.Now;
     }
 
     public Note()
@@ -18,6 +19,7 @@ public class Note : IEquatable<Note>
 
     public string Name { get; set; }
     public string Description { get; set; }
+    public DateTime Time { get; set; }
 
     public bool Equals(Note? other)
     {

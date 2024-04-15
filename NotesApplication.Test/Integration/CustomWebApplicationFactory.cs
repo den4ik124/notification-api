@@ -47,5 +47,4 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IClas
         context.Database.EnsureDeleted();
         return base.DisposeAsync();
     }
-
 }

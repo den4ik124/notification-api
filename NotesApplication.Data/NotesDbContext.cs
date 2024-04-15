@@ -44,7 +44,6 @@ public class NotesDbContext : DbContext
     {
         try
         {
-            await SaveChangesAsync(cancellationToken);
             _currentTransaction?.CommitAsync(cancellationToken);
         }
         catch
