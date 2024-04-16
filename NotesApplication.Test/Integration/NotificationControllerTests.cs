@@ -1,11 +1,10 @@
-﻿using Azure.Core;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using NotesApplication.API.Controllers;
+using NotesApplication.Business;
+using NotesApplication.Business.CreateNote;
+using NotesApplication.Business.UpdateNote;
 using NotesApplication.Core;
-using NotesApplication.Core.CreateNote;
-using NotesApplication.Core.GetAllNotes;
-using NotesApplication.Core.UpdateNote;
+using NotesApplication.Core.Constants;
 using System.Net;
 
 namespace NotesApplication.Test.Integration;
@@ -16,50 +15,6 @@ public class NotificationControllerTests : IntegrationTestBase
 
     public NotificationControllerTests(CustomWebApplicationFactory factory) : base(factory)
     {
-    }
-
-    [Fact]
-    public async Task GetAllNotes_WhenSuccess_ShouldReturnCollectionOfNotes()
-    {
-        //Arange
-
-        var dbContext = GetNotesDbContext();
-
-        List<Note> notifications = [
-       new Note()
-       {
-           Name = "Name1",
-           Description = "Description1"
-       }
-       ];
-        await dbContext.AddRangeAsync(notifications);
-        await dbContext.SaveChangesAsync();
-        //Act
-
-        var controller = new NotificationController(dbContext);
-        var res = await controller.GetAllNotes();
-
-        //Assert
-
-        res.Should().NotBeEmpty();
-        res.Should().BeEquivalentTo(notifications.Select(x => new NotificationResponse(x.Name, x.Description, x.Id)));
-    }
-
-    [Fact]
-    public async Task GetAllNotes_WhenSuccess_ShouldReturnEmptyCollectionOfNotes()
-    {
-        //Arange
-
-        var dbContext = GetNotesDbContext();
-
-        //Act
-
-        var controller = new NotificationController(dbContext);
-        var res = await controller.GetAllNotes();
-
-        //Assert
-
-        res.Should().BeEmpty();
     }
 
     [Fact]
@@ -80,8 +35,6 @@ public class NotificationControllerTests : IntegrationTestBase
         await dbContext.SaveChangesAsync();
         //Act
 
-        ///api/Notification/getNotes
-        //IEnumerable<NotificationResponse>?
         var responseMessage = await SendGetRequest(ControllerBaseUrl);
 
         var response = await ConvertTo<IEnumerable<NotificationResponse>>(responseMessage);
@@ -94,6 +47,60 @@ public class NotificationControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task GetNoteByID_WhenSuccessResponse_ShouldReturnNote()
+    {
+        //Arange
+
+        var dbContext = GetNotesDbContext();
+
+        List<Note> notifications = [
+       new Note()
+       {
+           Name = "Name1",
+           Description = "Description1"
+       }
+       ];
+
+        await dbContext.AddRangeAsync(notifications);
+        await dbContext.SaveChangesAsync();
+
+        var id = Guid.Parse(notifications.First().Id.ToString());
+
+        //var id = notifications.Select(x=>x.Id);
+        // x => x.Id == request.Id
+        //Act
+
+        var responseMessage = await SendGetRequest(ControllerBaseUrl + $"/{id}");
+
+        var response = await ConvertTo<NotificationResponse>(responseMessage);
+        //Assert
+
+        responseMessage.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        response.Should().NotBeNull();
+        response.Id.Should().Be(id);
+        response.Name.Should().Be(notifications.First().Name);
+        response.Description.Should().Be(notifications.First().Description);
+    }
+
+    [Fact]
+    public async Task GetNoteByID_WhenSuccessResponse_ShouldReturnBadRequest()
+    {
+        //Arange
+
+        Guid id = Guid.Empty;
+
+        //Act
+
+        var responseMessage = await SendGetRequest(ControllerBaseUrl + $"/{id}");
+
+        //Assert
+        (await responseMessage.Content.ReadAsStringAsync()).Should().Contain("Пустой Guid".ToUnicode());
+        responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task CreateNote_WhenSuccessResponse_ShouldReturnOk()
     {
         //Arange
@@ -101,7 +108,7 @@ public class NotificationControllerTests : IntegrationTestBase
         var description = "Description3";
         var dbContext = GetNotesDbContext();
 
-        var request = new CreateRequest()
+        var request = new CreateNoteCommand()
         {
             Name = name,
             Description = description
@@ -121,9 +128,18 @@ public class NotificationControllerTests : IntegrationTestBase
         dbContext.Notes.Count().Should().Be(1);
     }
 
+    public static IEnumerable<object[]> Data =>
+        new List<object[]>
+        {
+            new object[] { new CreateNoteCommand() { Name = "name", Description = "" },ValidationConst.EmptyDescription.ToUnicode()}, // проверяет пустое описание
+            new object[] { new CreateNoteCommand() { Name = "name", Description = new string('a', ValidationConst.MaxNameLength + 1) }, "Херовое описание".ToUnicode() }, // проверяет длину описания
+            new object[] { new CreateNoteCommand() {  Name = string.Empty,Description = "description"}, ValidationConst.EmptyName.ToUnicode() }, //проверяет пустое имя
+            new object[] { new CreateNoteCommand() { Name = new string('a', ValidationConst.MaxNameLength+1), Description = "description"}, "Херовое имя пользователя".ToUnicode() }, //проверяет длину имени
+        };
+
     [Theory]
     [MemberData(nameof(Data))]
-    public async Task CreateNote_WhenValidationFailed_ShouldReturn400(CreateRequest request, string expectedMessage)
+    public async Task CreateNote_WhenValidationFailed_ShouldReturn400(CreateNoteCommand request, string expectedMessage)
     {
         //Arange
 
@@ -135,19 +151,8 @@ public class NotificationControllerTests : IntegrationTestBase
         responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
 
-        (await responseMessage.Content.ReadAsStringAsync()).Should().Be(expectedMessage);
-        //var message = await ConvertTo<string>(responseMessage);
-        //message.Should().NotBeNull().And.Be(expectedMessage);
+        (await responseMessage.Content.ReadAsStringAsync()).Should().Contain(expectedMessage);
     }
-
-    public static IEnumerable<object[]> Data =>
-        new List<object[]>
-        {
-            new object[] { new CreateRequest() { Name = "name", Description = "" }, "Херовое описание" },
-            //new object[] { new CreateRequest() { Name = "name", Description = null }, "Херовое описание" },
-            //new object[] { new CreateRequest() {  Name = null,Description = "description"}, "Херовое имя пользователя" },
-            new object[] { new CreateRequest() {  Name = string.Empty,Description = "description"}, "Херовое имя пользователя" },
-        };
 
     [Fact]
     public async Task UpdateNote_WhenSuccessResponse_ShouldReturnOk()
@@ -161,10 +166,10 @@ public class NotificationControllerTests : IntegrationTestBase
         await dbContext.AddAsync(note);
         await dbContext.SaveChangesAsync();
 
-        var request = new UpdateRequest()
+        var request = new UpdateNoteRequest()
         {
-            NewName = "NewName1",
-            NewDescription = "NewDescription1"
+            Name = "NewName1",
+            Description = "NewDescription1"
         };
 
         //Act
@@ -178,13 +183,22 @@ public class NotificationControllerTests : IntegrationTestBase
         responseMessage.Should().HaveStatusCode(HttpStatusCode.OK);
         noteFromDb.Should().NotBeNull();
 
-        noteFromDb.Name.Should().Be(request.NewName);
-        noteFromDb.Description.Should().Be(request.NewDescription);
+        noteFromDb.Name.Should().Be(request.Name);
+        noteFromDb.Description.Should().Be(request.Description);
     }
+
+    public static IEnumerable<object[]> UpdateData =>
+        new List<object[]>
+        {
+            new object[] { new UpdateNoteRequest() { Name = "name", Description = "" },ValidationConst.EmptyDescription.ToUnicode()}, // проверяет пустое описание
+            new object[] { new UpdateNoteRequest() { Name = "name", Description = new string('a', ValidationConst.MaxNameLength + 1) }, "Херовое описание".ToUnicode() }, // проверяет длину описания
+            new object[] { new UpdateNoteRequest() {  Name = string.Empty,Description = "description"}, ValidationConst.EmptyName.ToUnicode() }, //проверяет пустое имя
+            new object[] { new UpdateNoteRequest() { Name = new string('a', ValidationConst.MaxNameLength+1), Description = "description"}, "Херовое имя пользователя".ToUnicode() }, //проверяет длину имени
+        };
 
     [Theory]
     [MemberData(nameof(UpdateData))]
-    public async Task UpdateNote_WhenValidationFailed_ShouldReturn400(UpdateRequest request, string expectedMessage)
+    public async Task UpdateNote_WhenValidationFailed_ShouldReturn400(UpdateNoteRequest request, string expectedMessage)
     {
         //Arange
 
@@ -194,12 +208,6 @@ public class NotificationControllerTests : IntegrationTestBase
 
         await dbContext.AddAsync(note);
         await dbContext.SaveChangesAsync();
-
-        //var request = new UpdateRequest()
-        //{
-        //    NewName = "NewName1",
-        //    NewDescription = "NewDescription1"
-        //};
 
         //Act
 
@@ -210,18 +218,19 @@ public class NotificationControllerTests : IntegrationTestBase
         responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
 
-        (await responseMessage.Content.ReadAsStringAsync()).Should().Be(expectedMessage);
+        (await responseMessage.Content.ReadAsStringAsync()).Should().Contain(expectedMessage);
     }
 
-    public static IEnumerable<object[]> UpdateData =>
-        new List<object[]>
-        {
-            new object[] { new UpdateRequest()  { NewName= "NewName", NewDescription = "" }, "Херовое описание" },
-            new object[] { new UpdateRequest() { NewName = string.Empty, NewDescription = "NewDescription" }, "Херовое имя пользователя" },
-        };
+    public static IEnumerable<object[]> InvalidUpdateData =>
+       new List<object[]>
+       {
+            new object[] { "Name1", "Description" },
+            new object[] { "Name", "Description1" },
+       };
 
-    [Fact]
-    public async Task UpdateNote_WhenValidationFromDBFailed_ShouldReturn400()
+    [Theory]
+    [MemberData(nameof(InvalidUpdateData))]
+    public async Task UpdateNote_WhenValidationFromDBFailed_ShouldReturn400(string name, string description)
     {
         //Arange
 
@@ -232,32 +241,19 @@ public class NotificationControllerTests : IntegrationTestBase
         await dbContext.AddAsync(note);
         await dbContext.SaveChangesAsync();
 
-        var requestSameName = new UpdateRequest()
+        var requestSame = new UpdateNoteRequest()
         {
-            NewName = "Name1",
-            NewDescription = "NewDescription1"
-        };
-        var requestSameDescription = new UpdateRequest()
-        {
-            NewName = "NewName",
-            NewDescription = "Description1"
+            Name = name,
+            Description = description
         };
 
         //Act
 
-        var responseMessageName = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", requestSameName);
-        var responseMessageDescription = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", requestSameDescription);
+        var responseMessage = await SendPutRequest(ControllerBaseUrl + $"/update/{note.Id}", requestSame);
 
         //Assert
-        var noteFromDb = dbContext.Notes.AsNoTracking().FirstOrDefault();
-
-        noteFromDb.Should().NotBeNull();
-
-        responseMessageName.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        responseMessageName.Should().HaveStatusCode(HttpStatusCode.BadRequest);
-
-        responseMessageDescription.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        responseMessageDescription.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+        responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -273,9 +269,8 @@ public class NotificationControllerTests : IntegrationTestBase
         await dbContext.SaveChangesAsync();
 
         var notFoundGuid = new Guid();
-        var emptyGuid = Guid.Empty;
 
-        var request = new UpdateRequest()
+        var request = new UpdateNoteCommand()
         {
             NewName = "Name123",
             NewDescription = "NewDescription123"
@@ -308,7 +303,7 @@ public class NotificationControllerTests : IntegrationTestBase
 
         var emptyGuid = Guid.Empty;
 
-        var request = new UpdateRequest()
+        var request = new UpdateNoteCommand()
         {
             NewName = "Name123",
             NewDescription = "NewDescription123"
@@ -368,6 +363,7 @@ public class NotificationControllerTests : IntegrationTestBase
         var responseMessage = await SendDeleteRequest(ControllerBaseUrl + $"/{id}");
 
         //Assert
+        (await responseMessage.Content.ReadAsStringAsync()).Should().Contain("Пустой Guid".ToUnicode());
         responseMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         responseMessage.Should().HaveStatusCode(HttpStatusCode.BadRequest);
     }

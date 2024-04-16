@@ -1,6 +1,6 @@
-﻿namespace NotesApplication.Core.CreateNote;
+﻿namespace NotesApplication.Business.UpdateNote;
 
-public class CreateRequest
+public class UpdateNoteRequest
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

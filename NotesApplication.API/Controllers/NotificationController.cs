@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using NotesApplication.Business;
+using NotesApplication.Business.CreateNote;
+using NotesApplication.Business.DeleteNote;
+using NotesApplication.Business.GetAllNotes;
+using NotesApplication.Business.GetNote;
+using NotesApplication.Business.UpdateNote;
 using NotesApplication.Core;
-using NotesApplication.Core.CreateNote;
-using NotesApplication.Core.GetAllNotes;
-using NotesApplication.Core.UpdateNote;
-using NotesApplication.Data;
+using System.Net;
 
 namespace NotesApplication.API.Controllers;
 
@@ -11,113 +15,73 @@ namespace NotesApplication.API.Controllers;
 [ApiController]
 public class NotificationController : ControllerBase
 {
-    private static List<Note> _notifications = [
-        new Note()
-        {
-            Id = new Guid("aaeaf34b-1cef-4f7c-b87d-fda12484edd8"),
-            Name = "Name1",
-            Description = "Description1"
-        }
-        ];
+    private readonly IMediator _mediator;
 
-    private readonly NotesDbContext _context;
-
-    public NotificationController(NotesDbContext context)
+    public NotificationController(IMediator mediator)
     {
-        _context = context;
+        _mediator = mediator;
     }
 
-    public virtual List<Note> Notes { get; set; }
-
     [HttpPut("update/{id}")]
-    public async Task<ActionResult<bool>> Update(Guid id, UpdateRequest request)
+    public async Task<IActionResult> Update(Guid id, UpdateNoteRequest request)
     {
-        if (id == Guid.Empty)
+        var result = await _mediator.Send(new UpdateNoteCommand
         {
-            return BadRequest("Пустой Guid");
-        }
-
-        if (string.IsNullOrEmpty(request.NewName))
-        {
-            return BadRequest("Херовое имя пользователя");
-        }
-        else if (string.IsNullOrEmpty(request.NewDescription))
-        {
-            return BadRequest("Херовое описание");
-        }
-
-        var note = _context.Notes.FirstOrDefault(x => x.Id == id);
-
-        if (note == null)
-        {
-            return NotFound("Запись с таким Id не найдена");
-        }
-
-        if (request.NewName == note.Name)
-        {
-            return BadRequest("Введено одинаковое Имя. Нечего изменять");
-        }
-        if (request.NewDescription == note.Description)
-        {
-            return BadRequest("Введено одинаковое Описание. Нечего изменять");
-        }
-
-        note.Name = request.NewName;
-
-        if (!string.IsNullOrEmpty(request.NewDescription))
-        {
-            note.Description = request.NewDescription;
-        }
-
-        _context.Update(note);
-        return await _context.SaveChangesAsync() > 0;
+            Id = id,
+            NewDescription = request.Description,
+            NewName = request.Name
+        });
+        return HandleResult(result);
     }
 
     [HttpGet()]
     public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
     {
-        return _context.Notes.Select(x => new NotificationResponse(x.Name, x.Description, x.Id));
+        return await _mediator.Send(new GetAllNotesQuery());
     }
 
     [HttpPost("create")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)] // StatusCode(201);
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateNotification(CreateRequest request)
+    public async Task<IActionResult> CreateNotification(CreateNoteCommand request)
     {
-        if (string.IsNullOrEmpty(request.Name))
-        {
-            return BadRequest("Херовое имя пользователя");
-        }
-        else if (string.IsNullOrEmpty(request.Description))
-        {
-            return BadRequest("Херовое описание");
-        }
-
-        var newNote = new Note(request.Name, request.Description);
-
-        _context.Add(newNote);
-        await _context.SaveChangesAsync();
-
+        await _mediator.Send(request);
         return Ok();
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult<bool>> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        if (id == Guid.Empty)
+        var result = await _mediator.Send(new DeleteNoteCommand(id));
+        return HandleResult(result);
+    }
+
+    [HttpGet("{id:Guid}", Name = "GetNoteById")]
+    public async Task<ActionResult<NotificationResponse>> GetNoteById(Guid id)
+    {
+        var product = await _mediator.Send(new GetNoteQuery(id));
+        return product != null ? Ok(product) : NotFound();
+    }
+
+    private IActionResult HandleResult(Result result)
+    {
+        if (result.IsSuccess)
         {
-            return BadRequest("Пустой Guid");
+            return Ok();
         }
 
-        var noteToRemove = _context.Notes.FirstOrDefault(x => x.Id == id);
-
-        if (noteToRemove == null)
+        switch (result.StatusCode)
         {
-            return NotFound();
-        }
+            case HttpStatusCode.NotFound:
 
-        _context.Notes.Remove(noteToRemove);
+                return NotFound(result.Message);
 
-        return await _context.SaveChangesAsync() > 0;
+            case HttpStatusCode.BadRequest:
+
+                return BadRequest(result.Message);
+
+            default:
+                return BadRequest("плохо");
+        };
     }
 }

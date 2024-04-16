@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NotesApplication.Core;
 
-namespace SeaBattle.Logic.ModelConfigs;
+namespace NotesApplication.Data;
 
 public class NoteConfiguration : IEntityTypeConfiguration<Note>
 {
