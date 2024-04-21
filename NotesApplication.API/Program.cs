@@ -1,10 +1,12 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NotesApplication.API.Middlewares;
 using NotesApplication.Business.Behavior;
 using NotesApplication.Business.GetAllNotes;
 using NotesApplication.Data;
+using NotesApplication.Data.Identity;
 
 namespace NotesApplication.API;
 
@@ -22,6 +24,10 @@ public partial class Program
 
         builder.Services.AddSwaggerGen();
 
+        builder.Services.AddAuthentication();
+        builder.Services.AddIdentityApiEndpoints<IdentityUser>()
+            .AddEntityFrameworkStores<DataContext>();  ///
+
         builder.Services.AddValidatorsFromAssembly(assembly);
         builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly))
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
@@ -34,17 +40,21 @@ public partial class Program
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         var app = builder.Build();
+
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>();
 
         // dbContext.Database.EnsureDeleted();   //  удаление БД MigrateAsync  EnsureCreated
         await dbContext.Database.MigrateAsync();
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+
+        app.MapIdentityApi<IdentityUser>(); ///
 
         app.UseHttpsRedirection();
 
@@ -60,5 +70,8 @@ public partial class Program
         // Добавляем сервисы Entity Framework и указываем строку подключения к базе данных
         services.AddDbContext<NotesDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("NotesDatabase")));
+
+        services.AddDbContext<DataContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("NotesDatabaseInitial")));
     }
 }
