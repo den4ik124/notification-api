@@ -9,7 +9,7 @@ public class NotesDbContext : DbContext
 {
     private IDbContextTransaction _currentTransaction;
 
-    public NotesDbContext(DbContextOptions options) : base(options)
+    public NotesDbContext(DbContextOptions<NotesDbContext> options) : base(options)
     {
     }
 
