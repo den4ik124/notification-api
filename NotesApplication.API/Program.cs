@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NotesApplication.API.Middlewares;
@@ -10,6 +11,7 @@ using NotesApplication.Business.Behavior;
 using NotesApplication.Business.GetAllNotes;
 using NotesApplication.Data;
 using NotesApplication.Data.Identity;
+using System.Reflection;
 using System.Text;
 
 namespace NotesApplication.API;
@@ -97,18 +99,39 @@ public partial class Program
 
         ConfigureServices(builder.Services, builder.Configuration);
 
+        //builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+        //{
+        //    options.Password.RequireDigit = true;
+        //    options.Password.RequiredLength = 8;
+        //});
+
         //тут работаем с сервисами
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         var app = builder.Build();
 
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-        var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>(); // TODO рефлексия. как зарегать несколько контекстов
-        var dataContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<DataContext>();
 
-        // dbContext.Database.EnsureDeleted();   //  удаление БД MigrateAsync  EnsureCreated
-        await dbContext.Database.MigrateAsync();
-        await dataContext.Database.MigrateAsync();
+        var notesDbContextType = typeof(DbContext);
+        //using IServiceScope scopedServiceProvider = app.Services.CreateScope();
+
+        var dbContextTypes = Assembly.GetExecutingAssembly().GetTypes()
+                           .Where(t => t != notesDbContextType && notesDbContextType.IsAssignableFrom(t));
+
+        foreach (var derivedType in dbContextTypes)
+        {
+            using (DbContext context = (DbContext)app.Services.CreateScope().ServiceProvider.GetRequiredService(derivedType))
+            {
+                await context.Database.MigrateAsync();
+            }
+        }
+
+        //var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>(); // TODO рефлексия. как зарегать несколько контекстов
+        //var dataContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<DataContext>();
+
+        //// dbContext.Database.EnsureDeleted();   //  удаление БД MigrateAsync  EnsureCreated
+        //await dbContext.Database.MigrateAsync();
+        //await dataContext.Database.MigrateAsync();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -121,9 +144,9 @@ public partial class Program
 
         app.UseHttpsRedirection();
 
-        app.UseAuthentication();
-
         app.UseAuthorization();
+
+        app.UseAuthentication();
 
         app.MapControllers();
 
@@ -138,5 +161,8 @@ public partial class Program
 
         services.AddDbContext<DataContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("NotesDatabaseInitial")));
+
+        //services.AddIdentity<IdentityUser, IdentityRole>()
+        //.AddEntityFrameworkStores<NotesDbContext>();
     }
 }

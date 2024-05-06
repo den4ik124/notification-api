@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using NotesApplication.Core;
+using NotesApplication.Data.Identity;
 using System.Reflection;
 
 namespace NotesApplication.Data;
@@ -22,6 +23,10 @@ public class NotesDbContext : DbContext
     //  Для использования функционала Fluent API переопределяется метод OnModelCreating():
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        //base.OnModelCreating(modelBuilder);
+
+        //modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
+        //modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 

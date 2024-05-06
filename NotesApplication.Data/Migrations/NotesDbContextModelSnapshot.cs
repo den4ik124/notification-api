@@ -22,6 +22,8 @@ namespace NotesApplication.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+           
+
             modelBuilder.Entity("NotesApplication.Core.Note", b =>
                 {
                     b.Property<Guid>("Id")
@@ -36,7 +38,7 @@ namespace NotesApplication.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("time")
+                    b.Property<DateTime>("Time")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
