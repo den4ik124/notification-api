@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace NotesApplication.Data.Identity;
 
-public class DataContext : IdentityDbContext<IdentityUser>
+public class IdentityContext : IdentityDbContext<IdentityUser>
 {
-    public DataContext(DbContextOptions<DataContext> options) : base(options)
+    public IdentityContext(DbContextOptions<IdentityContext> options) : base(options)
     {
     }
 }

@@ -1,17 +1,15 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using NotesApplication.API.Controllers.test;
 using NotesApplication.API.Middlewares;
 using NotesApplication.Business.Behavior;
 using NotesApplication.Business.GetAllNotes;
-using NotesApplication.Data;
 using NotesApplication.Data.Identity;
-using System.Reflection;
 using System.Text;
 
 namespace NotesApplication.API;
@@ -21,7 +19,7 @@ public partial class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        var assembly = typeof(GetAllNotesQuery).Assembly;
+        var businessAssembly = typeof(GetAllNotesQuery).Assembly;
         //builder.Configuration.AddJsonFile("appsettings.json");
 
         var config = new ConfigurationBuilder()
@@ -68,70 +66,65 @@ public partial class Program
                 });
         });
 
-        builder.Services.AddAuthentication(opt =>
+        builder.Services.AddAuthentication(options =>
         {
-            opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = "https://localhost:7037",
-                ValidAudience = "https://localhost:7037",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345!!@##$%%^qwertyuiopsuperSecretKey@345!!@##$%%^qwertyuiopsuperSecretKey@345!!@##$%%^qwertyuiop"))
-            };
-        });
+                options.RequireHttpsMetadata = true;
+                options.SaveToken = true;
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]))
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["secretCookie"];
+
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
         builder.Services.AddIdentityApiEndpoints<IdentityUser>(x =>
         x.Tokens.AuthenticatorTokenProvider = JwtBearerDefaults.AuthenticationScheme)
-        .AddEntityFrameworkStores<DataContext>();  ///
+        .AddEntityFrameworkStores<IdentityContext>();  ///
 
-        builder.Services.AddValidatorsFromAssembly(assembly);
-        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly))
+        builder.Services.AddAuthorization();
+
+        builder.Services.AddSingleton<TokenService>(); ////
+
+        //builder.Services.AddScoped<UserService>(); ////
+
+        builder.Services.AddValidatorsFromAssembly(businessAssembly);
+        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(businessAssembly))
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
-        ConfigureServices(builder.Services, builder.Configuration);
-
-        //builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
-        //{
-        //    options.Password.RequireDigit = true;
-        //    options.Password.RequiredLength = 8;
-        //});
-
+        builder.Services.ConfigureServices(builder.Configuration);
         //тут работаем с сервисами
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         var app = builder.Build();
 
+        app.UseMiddleware<RequestLoggingMiddleware>();
+
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-        var notesDbContextType = typeof(DbContext);
-        //using IServiceScope scopedServiceProvider = app.Services.CreateScope();
-
-        var dbContextTypes = Assembly.GetExecutingAssembly().GetTypes()
-                           .Where(t => t != notesDbContextType && notesDbContextType.IsAssignableFrom(t));
-
-        foreach (var derivedType in dbContextTypes)
-        {
-            using (DbContext context = (DbContext)app.Services.CreateScope().ServiceProvider.GetRequiredService(derivedType))
-            {
-                await context.Database.MigrateAsync();
-            }
-        }
-
-        //var dbContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<NotesDbContext>(); // TODO рефлексия. как зарегать несколько контекстов
-        //var dataContext = app.Services.CreateScope().ServiceProvider.GetRequiredService<DataContext>();
-
-        //// dbContext.Database.EnsureDeleted();   //  удаление БД MigrateAsync  EnsureCreated
-        //await dbContext.Database.MigrateAsync();
-        //await dataContext.Database.MigrateAsync();
+        await app.Migrate();
+        await app.Seed();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -139,30 +132,29 @@ public partial class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+        //app.MapUsersEndpoints();
 
         app.MapIdentityApi<IdentityUser>(); ///
 
         app.UseHttpsRedirection();
 
-        app.UseAuthorization();
+        app.UseCookiePolicy(new CookiePolicyOptions
+        {
+            MinimumSameSitePolicy = SameSiteMode.Strict,
+            HttpOnly = HttpOnlyPolicy.Always,
+            Secure = CookieSecurePolicy.Always
+        });
 
         app.UseAuthentication();
 
+        app.UseAuthorization();
+
         app.MapControllers();
 
+        app.MapGroup("api")
+            .RequireAuthorization()
+            .MapIdentityApi<IdentityUser>();
+
         app.Run();
-    }
-
-    public static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        //Добавляем сервисы Entity Framework и указываем строку подключения к базе данных
-        services.AddDbContext<NotesDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("NotesDatabase")));
-
-        services.AddDbContext<DataContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("NotesDatabaseInitial")));
-
-        //services.AddIdentity<IdentityUser, IdentityRole>()
-        //.AddEntityFrameworkStores<NotesDbContext>();
     }
 }

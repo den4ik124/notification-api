@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace NotesApplication.Data.Migrations.Data
+namespace NotesApplication.Data.Migrations.Identity
 {
     /// <inheritdoc />
     public partial class InitialCreateIdentity : Migration

@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using NotesApplication.Core;
-using NotesApplication.Data.Identity;
 using System.Reflection;
 
 namespace NotesApplication.Data;
