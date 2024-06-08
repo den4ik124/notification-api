@@ -2,6 +2,9 @@
 using NotesApplication.Data.Identity;
 using NotesApplication.Data;
 using Microsoft.AspNetCore.Identity;
+using NotesApplication.Core.Enums;
+using NotesApplication.Core.newFolder;
+using NotesApplication.Core.Entities;
 
 namespace NotesApplication.API;
 
@@ -27,59 +30,74 @@ public static class Extensions
 
         foreach (var derivedType in contextTypes)
         {
-            using (DbContext context = (DbContext)app.Services.CreateScope().ServiceProvider.GetRequiredService(derivedType))
-            {
-                //await context.Database.EnsureDeletedAsync();
-                await context.Database.MigrateAsync();
-            }
+            using DbContext context = (DbContext)app.Services.CreateScope().ServiceProvider.GetRequiredService(derivedType);
+
+            //await context.Database.EnsureDeletedAsync();
+            await context.Database.MigrateAsync();
         }
     }
 
     public static async Task Seed(this WebApplication app)
     {
-        using (var serviceScope = app.Services.CreateScope())
+        using var serviceScope = app.Services.CreateScope();
+
+        var services = serviceScope.ServiceProvider;
+
+        var roles = Enum
+          .GetValues<Role>();
+        try
         {
-            var services = serviceScope.ServiceProvider;
+            var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-            try
+            foreach (var role in roles)
             {
-                var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+                await roleManager.CreateAsync(new IdentityRole(role.ToString()));
+            }
+            // Проверяем, есть ли пользователь с таким имейлом уже в базе
+            var existingUser = await userManager.FindByEmailAsync("test@example.com");
 
-                // Проверяем, есть ли пользователь с таким имейлом уже в базе
-                var existingUser = await userManager.FindByEmailAsync("test@example.com");
-
-                if (existingUser == null)
+            if (existingUser == null)
+            {
+                // Если пользователя нет, создаем его
+                var newUser = new IdentityUser
                 {
-                    // Если пользователя нет, создаем его
-                    var newUser = new IdentityUser
-                    {
-                        UserName = "test@example",
-                        Email = "test@example.com"
-                    };
+                    UserName = "test@example",
+                    Email = "test@example.com"
+                };
 
-                    var result = await userManager.CreateAsync(newUser, "StrongPassword123!");
+                var result = await userManager.CreateAsync(newUser, "StrongPassword123!");
 
-                    if (result.Succeeded)
-                    {
-                        Console.WriteLine("Test user created successfully.");
-                    }
-                    else
-                    {
-                        foreach (var error in result.Errors)
-                        {
-                            Console.WriteLine(error.Description);
-                        }
-                    }
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(newUser, nameof(Role.Admin));
+                    Console.WriteLine("Test user created successfully.");
                 }
                 else
                 {
-                    Console.WriteLine("Test user already exists.");
+                    foreach (var error in result.Errors)
+                    {
+                        Console.WriteLine(error.Description);
+                    }
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine("An error occurred while adding the test user: " + ex.Message);
+                Console.WriteLine("Test user already exists.");
             }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred while adding the test user: " + ex.Message);
+        }
+    }
+
+    public static IEndpointConventionBuilder RequirePermissions<TBuilder>(
+       this TBuilder builder, params Permission[] permissions)
+           where TBuilder : IEndpointConventionBuilder
+    {
+        return builder
+            .RequireAuthorization(pb =>
+                pb.AddRequirements(new PermissionRequirement(permissions)));
     }
 }

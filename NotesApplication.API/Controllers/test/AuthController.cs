@@ -34,7 +34,7 @@ namespace NotesApplication.API.Controllers.test
                 return Unauthorized();
             }
 
-            var token = _tokenService.GenerateToken(user);
+            var token = await _tokenService.GenerateToken(user);
 
             Response.Cookies.Append("secretCookie", token, new CookieOptions
             {
@@ -46,10 +46,4 @@ namespace NotesApplication.API.Controllers.test
             return Ok(new { token });
         }
     }
-
-    //public class LoginModel
-    //{
-    //    public string Email { get; set; }
-    //    public string Password { get; set; }
-    //}
 }

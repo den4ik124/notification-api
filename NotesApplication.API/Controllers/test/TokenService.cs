@@ -9,19 +9,24 @@ namespace NotesApplication.API.Controllers.test;
 public class TokenService
 {
     private readonly IConfiguration _configuration;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public TokenService(IConfiguration configuration)
+    public TokenService(IConfiguration configuration, UserManager<IdentityUser> userManager)
     {
         _configuration = configuration;
+        _userManager = userManager;
     }
 
-    public string GenerateToken(IdentityUser user)
+    public async Task<string> GenerateToken(IdentityUser user)
     {
-        var claims = new[]
+        var roles = await _userManager.GetRolesAsync(user);
+        var claims = new List<Claim>
         {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+            new Claim(CustomClaims.UserId, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

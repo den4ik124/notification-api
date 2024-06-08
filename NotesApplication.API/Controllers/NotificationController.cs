@@ -14,6 +14,7 @@ namespace NotesApplication.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Policy = "User")]
 public class NotificationController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -51,7 +52,7 @@ public class NotificationController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize]
+    [Authorize(Policy = "AdminPolicy")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _mediator.Send(new DeleteNoteCommand(id));

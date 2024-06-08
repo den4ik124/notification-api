@@ -1,6 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Options;
 using NotesApplication.Core;
+using NotesApplication.Core.Configurations;
+using NotesApplication.Core.Entities;
+using NotesApplication.Core.newFolder;
 using System.Reflection;
 
 namespace NotesApplication.Data;
@@ -8,16 +12,23 @@ namespace NotesApplication.Data;
 public class NotesDbContext : DbContext
 {
     private IDbContextTransaction _currentTransaction;
+    private readonly IOptions<AuthorizationOptions> _authOptions;
+
+    public NotesDbContext(
+        DbContextOptions<NotesDbContext> options,
+        IOptions<AuthorizationOptions> authOptions) : base(options)
+    {
+        _authOptions = authOptions;
+    }
 
     public NotesDbContext(DbContextOptions<NotesDbContext> options) : base(options)
     {
     }
 
-    public NotesDbContext()
-    {
-    }
-
     public virtual DbSet<Note> Notes { get; set; }
+    public DbSet<UserEntity> Users { get; set; }
+
+    public DbSet<RoleEntity> Roles { get; set; }
 
     //  Для использования функционала Fluent API переопределяется метод OnModelCreating():
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,6 +38,8 @@ public class NotesDbContext : DbContext
         //modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         //modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        modelBuilder.ApplyConfiguration(new RolePermissionConfiguration(_authOptions.Value));
     }
 
     public override void Dispose()

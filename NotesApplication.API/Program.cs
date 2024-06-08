@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -9,8 +10,10 @@ using NotesApplication.API.Controllers.test;
 using NotesApplication.API.Middlewares;
 using NotesApplication.Business.Behavior;
 using NotesApplication.Business.GetAllNotes;
+using NotesApplication.Core.newFolder;
 using NotesApplication.Data.Identity;
 using System.Text;
+using System.Security.Claims;
 
 namespace NotesApplication.API;
 
@@ -98,15 +101,44 @@ public partial class Program
                 };
             });
 
+        builder.Services.Configure<NotesApplication.Core.newFolder.AuthorizationOptions>(builder.Configuration.GetSection(nameof(NotesApplication.Core.newFolder.AuthorizationOptions)));
+
+        //builder.Services.Configure<AuthorizationOptions>(builder.Configuration.GetSection(nameof(AuthorizationOptions)));
+
         builder.Services.AddIdentityApiEndpoints<IdentityUser>(x =>
-        x.Tokens.AuthenticatorTokenProvider = JwtBearerDefaults.AuthenticationScheme)
-        .AddEntityFrameworkStores<IdentityContext>();  ///
+        {
+            x.Tokens.AuthenticatorTokenProvider = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddRoles<IdentityRole>()
+            .AddRoleManager<RoleManager<IdentityRole>>()
+            .AddEntityFrameworkStores<IdentityContext>()
+             .AddSignInManager<SignInManager<IdentityUser>>();  ///
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminPolicy", policy =>
+                policy.RequireClaim(ClaimTypes.Role, "Admin", "User"));
+        });
+        //builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+        //.AddEntityFrameworkStores<IdentityContext>()
+        //.AddDefaultTokenProviders();
+        //builder.Services.AddIdentityCore<IdentityUser>(opt =>
+        //{
+        //    opt.Password.RequireDigit = true;
+        //    opt.Password.RequiredLength = 6;
+        //    opt.Password.RequireNonAlphanumeric = false;
+        //    opt.Password.RequireUppercase = false;
+        //    opt.Password.RequireLowercase = false;
+        //})
+        //    .AddRoles<IdentityRole>()
+        //    .AddRoleManager<RoleManager<IdentityRole>>()
+        //    .AddEntityFrameworkStores<IdentityContext>()
+        //    .AddSignInManager<SignInManager<IdentityUser>>()
+        //    .AddErrorDescriber<IdentityErrorDescriber>();
 
-        builder.Services.AddSingleton<TokenService>(); ////
+        builder.Services.AddScoped<TokenService>(); ////
 
-        //builder.Services.AddScoped<UserService>(); ////
+        builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>(); ////
 
         builder.Services.AddValidatorsFromAssembly(businessAssembly);
         builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(businessAssembly))
@@ -134,7 +166,7 @@ public partial class Program
         }
         //app.MapUsersEndpoints();
 
-        app.MapIdentityApi<IdentityUser>(); ///
+        //app.MapIdentityApi<IdentityUser>(); ///
 
         app.UseHttpsRedirection();
 
@@ -151,9 +183,9 @@ public partial class Program
 
         app.MapControllers();
 
-        app.MapGroup("api")
-            .RequireAuthorization()
-            .MapIdentityApi<IdentityUser>();
+        //app.MapGroup("api")
+        //    .RequireAuthorization()
+        //    .MapIdentityApi<IdentityUser>();
 
         app.Run();
     }
