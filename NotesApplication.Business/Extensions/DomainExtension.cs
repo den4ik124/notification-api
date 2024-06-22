@@ -1,4 +1,4 @@
-﻿using NotesApplication.Core;
+﻿using NotesApplication.Core.Models;
 
 namespace NotesApplication.Business.Extensions;
 

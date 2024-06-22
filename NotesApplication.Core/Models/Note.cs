@@ -1,4 +1,6 @@
-﻿namespace NotesApplication.Core;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace NotesApplication.Core.Models;
 
 public class Note : IEquatable<Note>
 {
@@ -23,7 +25,7 @@ public class Note : IEquatable<Note>
 
     public bool Equals(Note? other)
     {
-        return this.GetHashCode() == other.GetHashCode();
+        return GetHashCode() == other.GetHashCode();
     }
 
     public override int GetHashCode()

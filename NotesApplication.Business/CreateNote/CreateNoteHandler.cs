@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using NotesApplication.Core;
+using NotesApplication.Core.Models;
 using NotesApplication.Data;
 
 namespace NotesApplication.Business.CreateNote;

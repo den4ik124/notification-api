@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using NotesApplication.Data.Identity;
-using NotesApplication.Data;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using NotesApplication.Core.Enums;
-using NotesApplication.Core.newFolder;
-using NotesApplication.Core.Entities;
+using NotesApplication.Data;
+using NotesApplication.Data.Identity;
 
 namespace NotesApplication.API;
 
@@ -44,7 +42,7 @@ public static class Extensions
         var services = serviceScope.ServiceProvider;
 
         var roles = Enum
-          .GetValues<Role>();
+          .GetValues<Roles>();
         try
         {
             var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
@@ -55,7 +53,7 @@ public static class Extensions
                 await roleManager.CreateAsync(new IdentityRole(role.ToString()));
             }
             // Проверяем, есть ли пользователь с таким имейлом уже в базе
-            var existingUser = await userManager.FindByEmailAsync("test@example.com");
+            var existingUser = await userManager.FindByEmailAsync("string");
 
             if (existingUser == null)
             {
@@ -63,14 +61,14 @@ public static class Extensions
                 var newUser = new IdentityUser
                 {
                     UserName = "test@example",
-                    Email = "test@example.com"
+                    Email = "string"
                 };
 
-                var result = await userManager.CreateAsync(newUser, "StrongPassword123!");
+                var result = await userManager.CreateAsync(newUser, "String!123");
 
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(newUser, nameof(Role.Admin));
+                    await userManager.AddToRoleAsync(newUser, nameof(Roles.Manager));
                     Console.WriteLine("Test user created successfully.");
                 }
                 else
@@ -92,12 +90,12 @@ public static class Extensions
         }
     }
 
-    public static IEndpointConventionBuilder RequirePermissions<TBuilder>(
-       this TBuilder builder, params Permission[] permissions)
-           where TBuilder : IEndpointConventionBuilder
-    {
-        return builder
-            .RequireAuthorization(pb =>
-                pb.AddRequirements(new PermissionRequirement(permissions)));
-    }
+    //public static IEndpointConventionBuilder RequirePermissions<TBuilder>(
+    //   this TBuilder builder, params Permission[] permissions)
+    //       where TBuilder : IEndpointConventionBuilder
+    //{
+    //    return builder
+    //        .RequireAuthorization(pb =>
+    //            pb.AddRequirements(new PermissionRequirement(permissions)));
+    //}
 }

@@ -1,4 +1,4 @@
-﻿namespace NotesApplication.API.Controllers.test;
+﻿namespace NotesApplication.API.Middlewares;
 
 public class RequestLoggingMiddleware
 {

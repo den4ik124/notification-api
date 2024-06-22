@@ -1,8 +1,10 @@
 ﻿namespace NotesApplication.Core.Enums;
 
-public enum Role
+public enum Roles
 {
     Admin = 1,
 
-    User = 2
+    User = 2,
+
+    Manager = 3
 }

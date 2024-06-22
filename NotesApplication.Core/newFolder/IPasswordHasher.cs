@@ -1,8 +1,8 @@
-﻿namespace NotesApplication.Core.newFolder;
+﻿//namespace NotesApplication.Core.newFolder;
 
-public interface IPasswordHasher
-{
-    string Generate(string password);
+//public interface IPasswordHasher
+//{
+//    string Generate(string password);
 
-    bool Verify(string password, string hashedPassword);
-}
+//    bool Verify(string password, string hashedPassword);
+//}

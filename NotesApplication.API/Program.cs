@@ -1,19 +1,18 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using NotesApplication.API.Controllers.test;
+using NotesApplication.API.Controllers;
 using NotesApplication.API.Middlewares;
+using NotesApplication.Business.Auth;
 using NotesApplication.Business.Behavior;
 using NotesApplication.Business.GetAllNotes;
-using NotesApplication.Core.newFolder;
 using NotesApplication.Data.Identity;
-using System.Text;
 using System.Security.Claims;
+using System.Text;
 
 namespace NotesApplication.API;
 
@@ -101,9 +100,11 @@ public partial class Program
                 };
             });
 
-        builder.Services.Configure<NotesApplication.Core.newFolder.AuthorizationOptions>(builder.Configuration.GetSection(nameof(NotesApplication.Core.newFolder.AuthorizationOptions)));
+        //builder.Services.Configure<NotesApplication.Core.newFolder.AuthorizationOptions>(builder.Configuration.GetSection(nameof(NotesApplication.Core.newFolder.AuthorizationOptions)));
 
         //builder.Services.Configure<AuthorizationOptions>(builder.Configuration.GetSection(nameof(AuthorizationOptions)));
+
+        builder.Services.Configure<ConnectionStrings>(builder.Configuration.GetSection("ConnectionStrings"));
 
         builder.Services.AddIdentityApiEndpoints<IdentityUser>(x =>
         {
@@ -116,29 +117,16 @@ public partial class Program
 
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy("AdminPolicy", policy =>
-                policy.RequireClaim(ClaimTypes.Role, "Admin", "User"));
+            options.AddPolicy("UserPolicy", policy => policy.RequireClaim(ClaimTypes.Role, "User"));
+            options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+            options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
+            options.AddPolicy("AdminOrManagerPolicy", policy => policy.RequireRole("Admin", "Manager"));
+            options.AddPolicy("AdminOrUserPolicy", policy => policy.RequireRole("Admin", "User"));
         });
-        //builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-        //.AddEntityFrameworkStores<IdentityContext>()
-        //.AddDefaultTokenProviders();
-        //builder.Services.AddIdentityCore<IdentityUser>(opt =>
-        //{
-        //    opt.Password.RequireDigit = true;
-        //    opt.Password.RequiredLength = 6;
-        //    opt.Password.RequireNonAlphanumeric = false;
-        //    opt.Password.RequireUppercase = false;
-        //    opt.Password.RequireLowercase = false;
-        //})
-        //    .AddRoles<IdentityRole>()
-        //    .AddRoleManager<RoleManager<IdentityRole>>()
-        //    .AddEntityFrameworkStores<IdentityContext>()
-        //    .AddSignInManager<SignInManager<IdentityUser>>()
-        //    .AddErrorDescriber<IdentityErrorDescriber>();
 
         builder.Services.AddScoped<TokenService>(); ////
 
-        builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>(); ////
+        //builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>(); ////
 
         builder.Services.AddValidatorsFromAssembly(businessAssembly);
         builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(businessAssembly))
@@ -182,10 +170,6 @@ public partial class Program
         app.UseAuthorization();
 
         app.MapControllers();
-
-        //app.MapGroup("api")
-        //    .RequireAuthorization()
-        //    .MapIdentityApi<IdentityUser>();
 
         app.Run();
     }

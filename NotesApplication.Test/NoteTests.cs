@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using NotesApplication.Core;
+using NotesApplication.Core.Models;
 
 namespace NotesApplication.Test;
 

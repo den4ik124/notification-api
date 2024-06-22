@@ -1,8 +1,8 @@
-﻿using NotesApplication.Core.Enums;
+﻿//using NotesApplication.Core.Enums;
 
-namespace NotesApplication.Core.newFolder;
+//namespace NotesApplication.Core.newFolder;
 
-public interface IPermissionService
-{
-    Task<HashSet<Permission>> GetPermissionsAsync(Guid userId);
-}
+//public interface IPermissionService
+//{
+//    Task<HashSet<Permission>> GetPermissionsAsync(Guid userId);
+//}

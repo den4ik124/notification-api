@@ -1,4 +1,4 @@
-﻿namespace NotesApplication.API.Models;
+﻿namespace NotesApplication.Core.Models;
 
 public class LoginModel
 {

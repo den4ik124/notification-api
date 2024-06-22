@@ -1,4 +1,4 @@
-﻿namespace NotesApplication.API.Controllers.test
+﻿namespace NotesApplication.Business.Auth
 {
     internal class CustomClaims
     {

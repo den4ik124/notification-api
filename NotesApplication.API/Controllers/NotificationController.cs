@@ -14,7 +14,6 @@ namespace NotesApplication.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Policy = "User")]
 public class NotificationController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -24,6 +23,7 @@ public class NotificationController : ControllerBase
         _mediator = mediator;
     }
 
+    [Authorize(Policy = "AdminOrUserPolicy")]
     [HttpPut("update/{id}")]
     public async Task<IActionResult> Update(Guid id, UpdateNoteRequest request)
     {
@@ -36,12 +36,14 @@ public class NotificationController : ControllerBase
         return HandleResult(result);
     }
 
+    [Authorize(Policy = "AdminPolicy")]
     [HttpGet()]
     public async Task<IEnumerable<NotificationResponse>> GetAllNotes()
     {
         return await _mediator.Send(new GetAllNotesQuery());
     }
 
+    [Authorize(Policy = "AdminOrUserPolicy")]
     [HttpPost("create")]
     [ProducesResponseType(StatusCodes.Status200OK)] // StatusCode(201);
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -51,14 +53,15 @@ public class NotificationController : ControllerBase
         return Ok();
     }
 
-    [HttpDelete("{id}")]
     [Authorize(Policy = "AdminPolicy")]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _mediator.Send(new DeleteNoteCommand(id));
         return HandleResult(result);
     }
 
+    [Authorize(Policy = "AdminOrUserPolicy")]
     [HttpGet("{id:Guid}", Name = "GetNoteById")]
     public async Task<ActionResult<NotificationResponse>> GetNoteById(Guid id)
     {

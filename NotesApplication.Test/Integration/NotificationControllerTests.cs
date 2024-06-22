@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using NotesApplication.Business;
 using NotesApplication.Business.CreateNote;
 using NotesApplication.Business.UpdateNote;
-using NotesApplication.Core;
 using NotesApplication.Core.Constants;
+using NotesApplication.Core.Models;
 using System.Net;
 
 namespace NotesApplication.Test.Integration;

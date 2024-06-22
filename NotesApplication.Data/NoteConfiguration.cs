@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using NotesApplication.Core;
+using NotesApplication.Core.Models;
 
 namespace NotesApplication.Data;
 
